@@ -1,42 +1,27 @@
-require("dotenv").config();
-const express = require("express");
-const mongoose = require("mongoose");
-const cors = require("cors");
-const cron = require("node-cron");
-
-const packageRoutes   = require("./routes/packages");
-const bookingRoutes   = require("./routes/bookings");
-const dashboardRoutes = require("./routes/dashboard");
-const Booking         = require("./models/Booking");
-
-const app  = express();
-const PORT = process.env.PORT || 5000;
-
-
-// ── CORS ──────────────────────────────────────────────────────────────────────
-// CORS_ORIGIN env variable la unoda Vercel URL pottu
-// Example: CORS_ORIGIN=https://jeeva-salon.vercel.app
-const allowedOrigins = ["http://localhost:5173"];
+const allowedOrigins = (
+  process.env.CORS_ORIGIN ||
+  "http://localhost:5173,https://jeevabeauty-saloon.vercel.app"
+)
+.split(",")
+.map(origin => origin.trim());
 
 const corsOptions = {
-  origin: function (origin, callback) {
+  origin: (origin, callback) => {
     if (!origin) return callback(null, true);
 
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
 
+    console.log("Blocked Origin:", origin);
     callback(new Error(`CORS blocked: ${origin}`));
   },
-  credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
 };
 
 app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));
-app.use(express.json());
-
 // ── MongoDB connect ───────────────────────────────────────────────────────────
 mongoose
   .connect(process.env.MONGO_URI)
