@@ -1,6 +1,6 @@
 const allowedOrigins = (
   process.env.CORS_ORIGIN ||
-  "http://localhost:5173,https://jeevabeauty-saloon.vercel.app"
+  "https://jeevabeauty-saloon.vercel.app"
 )
 .split(",")
 .map(origin => origin.trim());
