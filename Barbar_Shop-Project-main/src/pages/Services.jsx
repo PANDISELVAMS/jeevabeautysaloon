@@ -67,7 +67,7 @@ export default function Services() {
                 </span>
               ))}
             </div>
-            <div className="flexflex items-center gap-4 shrink-0">
+            <div className="flex items-center gap-4 shrink-0">
               <span className="font-bebas text-2xl text-gold">₹{cartTotal}</span>
               <Link to="/booking" className="bg-gold text-black px-5 py-2 text-xs tracking-[2px] uppercase font-semibold hover:bg-gold-light transition-colors inline-flex items-center gap-1">
                 Book <ArrowRight size={12} />
