@@ -55,7 +55,7 @@ export default function Services() {
       {cart.length > 0 && (
         <div className="fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 z-40 w-full max-w-2xl px-4">
           <div className="bg-black-soft border border-gold/40 shadow-2xl shadow-black p-4 flex items-center gap-4 flex-wrap">
-            <div className="flex-wrap flex items-center gap-2 text-gold">
+            <div className="flex items-center gap-2 text-gold">
               <ShoppingBag size={16} />
               <span className="font-bebas text-xl">{cart.length} service{cart.length > 1 ? 's' : ''}</span>
             </div>
@@ -67,7 +67,7 @@ export default function Services() {
                 </span>
               ))}
             </div>
-            <div className="flex items-center gap-4 shrink-0">
+            <div className="flexflex items-center gap-4 shrink-0">
               <span className="font-bebas text-2xl text-gold">₹{cartTotal}</span>
               <Link to="/booking" className="bg-gold text-black px-5 py-2 text-xs tracking-[2px] uppercase font-semibold hover:bg-gold-light transition-colors inline-flex items-center gap-1">
                 Book <ArrowRight size={12} />
