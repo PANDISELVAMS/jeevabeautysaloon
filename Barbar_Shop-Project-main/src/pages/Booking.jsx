@@ -471,23 +471,23 @@ export default function Booking() {
                       })}
                     </div>
 
-                    {/* Already-booked ranges for this date, shown clearly */}
+                    {/* Already-booked ranges for this date - times only, no customer names (privacy) */}
                     {busySlots.length > 0 && (
                       <div className="bg-black-card border border-black-border p-4">
                         <div className="text-[10px] tracking-[2px] uppercase text-cream/40 mb-2">
                           Already Booked Today
                         </div>
-                        <div className="space-y-1.5">
+                        <div className="flex flex-wrap gap-2">
                           {busySlots
                             .slice()
                             .sort((a, b) => a.start.localeCompare(b.start))
                             .map((slot, i) => (
-                              <div key={i} className="flex items-center justify-between text-xs">
-                                <span className="text-cream/50">
-                                  {to12Hour(slot.start)} – {to12Hour(slot.end)}
-                                </span>
-                                <span className="text-cream/30">{slot.booked_by}</span>
-                              </div>
+                              <span
+                                key={i}
+                                className="text-xs text-cream/50 bg-black border border-black-border px-2 py-1"
+                              >
+                                {to12Hour(slot.start)} – {to12Hour(slot.end)}
+                              </span>
                             ))}
                         </div>
                       </div>

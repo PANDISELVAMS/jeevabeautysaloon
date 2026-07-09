@@ -3,6 +3,8 @@ const router  = express.Router();
 const Booking = require("../models/Booking");
 
 // GET /api/busy?date=2024-12-25
+// SECURITY: only returns start/end times - never exposes customer_name
+// This endpoint is public (anyone on the booking page can call it)
 router.get("/busy", async (req, res) => {
   try {
     const { date } = req.query;
@@ -11,14 +13,13 @@ router.get("/busy", async (req, res) => {
     const bookings = await Booking.find({
       booking_date: date,
       status: { $in: ["pending", "completed"] },
-    }).select("customer_name start_time end_time -_id");
+    }).select("start_time end_time -_id"); // customer_name NOT selected
 
     res.json({
       date,
       busy_slots: bookings.map(b => ({
-        start:      b.start_time,
-        end:        b.end_time,
-        booked_by:  b.customer_name,
+        start: b.start_time,
+        end:   b.end_time,
       })),
     });
   } catch (err) {
