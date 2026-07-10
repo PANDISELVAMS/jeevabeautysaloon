@@ -16,7 +16,7 @@ const PORT = process.env.PORT || 5000;
 // ── CORS ──────────────────────────────────────────────────────────────────────
 // CORS_ORIGIN env variable la unoda Vercel URL pottu
 // Example: CORS_ORIGIN=https://jeeva-salon.vercel.app
-const allowedOrigins = (process.env.CORS_ORIGIN || "https://jeevabeauty-saloon.vercel.app")
+const allowedOrigins = (process.env.CORS_ORIGIN || "https://jeevabeautysaloon.vercel.app")
   .split(",")
   .map((o) => o.trim());
 
