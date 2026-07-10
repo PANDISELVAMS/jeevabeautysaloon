@@ -28,6 +28,10 @@ const bookingSchema = new mongoose.Schema(
     notes:  { type: String, default: "" },
     amount: { type: Number, required: true, min: 0 }, // cartTotal from frontend
     created_at: { type: Date, default: Date.now },
+
+    // Stores the Telegram message id so status changes (from Telegram buttons
+    // or from the admin dashboard) can update the same message in place.
+    telegram_message_id: { type: Number, default: null },
   },
   { timestamps: true }
 );

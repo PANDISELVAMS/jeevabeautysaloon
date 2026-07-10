@@ -1,7 +1,7 @@
 const express = require("express");
 const router  = express.Router();
 const Booking = require("../models/Booking");
-const { notifyNewBooking } = require("../utils/telegram");
+const { notifyNewBooking, updateBookingMessage } = require("../utils/telegram");
 
 // Fallback ONLY used if frontend somehow doesn't send a duration
 const FALLBACK_DURATION = 30;
@@ -75,11 +75,16 @@ router.post("/", async (req, res) => {
 
     res.status(201).json(booking);
 
-    // 🔔 Notify admin on Telegram - fire and forget, never blocks the response
+    // 🔔 Notify admin on Telegram with action buttons - fire and forget
     // If Telegram is down/misconfigured, booking still succeeds normally.
-    notifyNewBooking(booking).catch(err =>
-      console.error("Telegram notify error:", err.message)
-    );
+    notifyNewBooking(booking)
+      .then(async (messageId) => {
+        if (messageId) {
+          booking.telegram_message_id = messageId;
+          await booking.save();
+        }
+      })
+      .catch(err => console.error("Telegram notify error:", err.message));
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -96,7 +101,15 @@ router.patch("/:id/status", async (req, res) => {
       req.params.id, { status }, { new: true }
     );
     if (!booking) return res.status(404).json({ error: "Booking not found" });
+
     res.json(booking);
+
+    // Keep Telegram message in sync when status changed from the dashboard
+    if (booking.telegram_message_id) {
+      updateBookingMessage(booking.telegram_message_id, booking).catch(err =>
+        console.error("Telegram sync error:", err.message)
+      );
+    }
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

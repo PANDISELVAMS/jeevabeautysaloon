@@ -1,20 +1,21 @@
 require("dotenv").config();
-
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const cron = require("node-cron");
 
-const packageRoutes = require("./routes/packages");
-const bookingRoutes = require("./routes/bookings");
+const packageRoutes   = require("./routes/packages");
+const bookingRoutes   = require("./routes/bookings");
 const dashboardRoutes = require("./routes/dashboard");
-const Booking = require("./models/Booking");
+const telegramWebhook = require("./routes/telegramWebhook");
+const Booking         = require("./models/Booking");
 
-const app = express();
+const app  = express();
 const PORT = process.env.PORT || 5000;
 
-// ===================== CORS ======================
-
+// ── CORS ──────────────────────────────────────────────────────────────────────
+// CORS_ORIGIN env variable la unoda Vercel URL pottu
+// Example: CORS_ORIGIN=https://jeeva-salon.vercel.app
 const allowedOrigins = (
   process.env.CORS_ORIGIN ||
   "https://jeevabeauty-saloon.vercel.app"
@@ -46,59 +47,41 @@ app.options("*", cors(corsOptions));
 
 app.use(express.json());
 
-// ===================== MongoDB ======================
-
+// ── MongoDB connect ───────────────────────────────────────────────────────────
 mongoose
   .connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ MongoDB Connected"))
+  .then(() => console.log("✅ MongoDB connected"))
   .catch((err) => {
-    console.log("MongoDB Error:", err.message);
+    console.error("❌ MongoDB connection error:", err.message);
     process.exit(1);
   });
 
-// ===================== Routes ======================
-
+// ── Routes ────────────────────────────────────────────────────────────────────
 app.use("/api/packages", packageRoutes);
 app.use("/api/bookings", bookingRoutes);
-app.use("/api", dashboardRoutes);
+app.use("/api",          dashboardRoutes); // /api/dashboard + /api/busy
+app.use("/api/telegram", telegramWebhook); // /api/telegram/webhook
 
-// ===================== Home ======================
+// Health check
+app.get("/", (req, res) => res.json({ status: "Jeeva Salon API running ✅" }));
 
-app.get("/", (req, res) => {
-  res.json({
-    status: "Jeeva Salon API running ✅",
-  });
+// ── Auto-delete: 7 days pana bookings delete ──────────────────────────────────
+// Every Sunday 12:30 AM IST = Sunday 7:00 PM UTC
+// Cron format: minute hour day month weekday
+cron.schedule("0 19 * * 0", async () => {
+  try {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 7);
+    const result = await Booking.deleteMany({ createdAt: { $lt: cutoff } });
+    console.log(`🗑️  Auto-deleted ${result.deletedCount} bookings older than 7 days`);
+  } catch (err) {
+    console.error("Auto-delete error:", err.message);
+  }
+}, {
+  timezone: "Asia/Kolkata",
 });
 
-// ===================== Auto Delete ======================
-
-cron.schedule(
-  "0 19 * * 0",
-  async () => {
-    try {
-      const cutoff = new Date();
-      cutoff.setDate(cutoff.getDate() - 7);
-
-      const result = await Booking.deleteMany({
-        createdAt: {
-          $lt: cutoff,
-        },
-      });
-
-      console.log(
-        `Deleted ${result.deletedCount} bookings older than 7 days`
-      );
-    } catch (err) {
-      console.log(err.message);
-    }
-  },
-  {
-    timezone: "Asia/Kolkata",
-  }
-);
-
-// ===================== Server ======================
-
+// ── Start server ──────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
-  console.log(`🚀 Server Running on Port ${PORT}`);
+  console.log(`🚀 Jeeva Salon Backend running on port ${PORT}`);
 });
