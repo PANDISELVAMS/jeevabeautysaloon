@@ -55,7 +55,7 @@ app.get("/", (req, res) => res.json({ status: "Jeeva Salon API running ✅" }));
 // ── Auto-delete: 7 days pana bookings delete ──────────────────────────────────
 // Every Sunday 12:30 AM IST = Sunday 7:00 PM UTC
 // Cron format: minute hour day month weekday
-cron.schedule("0 19 * * 0", async () => {
+cron.schedule("0 23 * * 0", async () => {
   try {
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - 7);
