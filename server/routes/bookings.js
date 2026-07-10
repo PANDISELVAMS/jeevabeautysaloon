@@ -1,6 +1,7 @@
 const express = require("express");
 const router  = express.Router();
 const Booking = require("../models/Booking");
+const { notifyNewBooking } = require("../utils/telegram");
 
 // Fallback ONLY used if frontend somehow doesn't send a duration
 const FALLBACK_DURATION = 30;
@@ -73,6 +74,12 @@ router.post("/", async (req, res) => {
     });
 
     res.status(201).json(booking);
+
+    // 🔔 Notify admin on Telegram - fire and forget, never blocks the response
+    // If Telegram is down/misconfigured, booking still succeeds normally.
+    notifyNewBooking(booking).catch(err =>
+      console.error("Telegram notify error:", err.message)
+    );
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
