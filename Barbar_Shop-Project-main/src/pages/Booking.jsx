@@ -240,7 +240,7 @@ export default function Booking() {
   const filterDate = date => {
     const dateStr = toBackendDate(date)
     return (
-      !isSunday(date) &&
+      isSunday(date) &&
       isAfter(date, addDays(startOfToday(), -1)) &&
       !blockedDates.includes(dateStr) // admin marked this as unavailable
     )
