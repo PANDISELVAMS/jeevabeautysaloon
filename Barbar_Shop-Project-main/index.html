@@ -13,6 +13,84 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/react-datepicker@7.3.0/dist/react-datepicker.css" />
+    <!--
+  ═══════════════════════════════════════════════════════════════════════
+  JEEVA BEAUTY SALON - SEO META TAGS
+  Ithu unoda existing index.html file oda <head> tag-ku ULLA paste pannu.
+  Existing <title> tag irundha adha replace pannu, illainaa add pannu.
+  ═══════════════════════════════════════════════════════════════════════
+-->
+
+<!-- Basic SEO -->
+<title>Jeeva Beauty Salon | Best Hair & Beauty Salon - Book Appointment Online</title>
+<meta name="description" content="Jeeva Beauty Salon - Premium hair cutting, styling, beard trim & beauty services. Book your appointment online instantly. Expert barbers, affordable prices." />
+<meta name="keywords" content="beauty salon, hair salon, haircut, beard trim, hair styling, salon booking, Jeeva Beauty Salon" />
+<meta name="author" content="Jeeva Beauty Salon" />
+<link rel="canonical" href="https://jeevabeautysaloon.vercel.app/" />
+
+<!-- Mobile & viewport (probably already there, keep only one) -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8" />
+
+<!-- Open Graph (Facebook, WhatsApp, LinkedIn preview) -->
+<meta property="og:type" content="website" />
+<meta property="og:title" content="Jeeva Beauty Salon | Book Your Appointment Online" />
+<meta property="og:description" content="Premium hair cutting, styling & beauty services. Book your appointment online instantly." />
+<meta property="og:url" content="https://jeevabeautysaloon.vercel.app/" />
+<meta property="og:image" content="https://jeevabeautysaloon.vercel.app/ogimg.png" />
+<meta property="og:site_name" content="Jeeva Beauty Salon" />
+<meta property="og:locale" content="en_IN" />
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Jeeva Beauty Salon | Book Your Appointment Online" />
+<meta name="twitter:description" content="Premium hair cutting, styling & beauty services. Book instantly online." />
+<meta name="twitter:image" content="https://jeevabeautysaloon.vercel.app/og-image.jpg" />
+
+<!-- Favicon (already have it probably, keep only one set) -->
+<link rel="icon" type="image/png" href="/favicon.png" />
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     STRUCTURED DATA (JSON-LD) - THIS is what makes Google show your salon
+     with a map, rating stars, hours, phone number etc in search results.
+     Replace phone/address/hours with YOUR actual details.
+════════════════════════════════════════════════════════════════════════ -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "HairSalon",
+  "name": "Jeeva Beauty Salon",
+  "image": "https://jeevabeautysaloon.vercel.app/og-image.jpg",
+  "url": "https://jeevabeautysaloon.vercel.app/",
+  "telephone": "+917904616471",
+  "priceRange": "₹₹",
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "REPLACE WITH YOUR STREET ADDRESS",
+    "addressLocality": "REPLACE WITH YOUR CITY",
+    "addressRegion": "REPLACE WITH YOUR STATE",
+    "postalCode": "REPLACE WITH PINCODE",
+    "addressCountry": "IN"
+  },
+  "geo": {
+    "@type": "GeoCoordinates",
+    "latitude": "REPLACE_WITH_LATITUDE",
+    "longitude": "REPLACE_WITH_LONGITUDE"
+  },
+  "openingHoursSpecification": [
+    {
+      "@type": "OpeningHoursSpecification",
+      "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+      "opens": "09:00",
+      "closes": "19:30"
+    }
+  ],
+  "sameAs": [
+    "REPLACE_WITH_FACEBOOK_URL",
+    "REPLACE_WITH_INSTAGRAM_URL"
+  ]
+}
+</script>
   </head>
   <body>
     <div id="root"></div>
