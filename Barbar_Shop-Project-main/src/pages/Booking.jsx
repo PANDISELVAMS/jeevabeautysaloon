@@ -28,8 +28,15 @@ const toBackendTime = (displayTime) => {
 }
 
 // "2024-12-25" format for backend
+// IMPORTANT: Do NOT use toISOString() here - it converts to UTC first, and since
+// India is UTC+5:30, local midnight rolls back to the PREVIOUS day's date in UTC.
+// That caused a one-day-off bug (blocking 26th showed as blocking 27th).
+// Using local Y/M/D components directly avoids any UTC conversion.
 const toBackendDate = (dateObj) => {
-  return dateObj.toISOString().slice(0, 10)
+  const year  = dateObj.getFullYear()
+  const month = String(dateObj.getMonth() + 1).padStart(2, '0')
+  const day   = String(dateObj.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
 }
 
 // "9:30 AM" → total minutes since midnight (for overlap math)
@@ -512,11 +519,13 @@ export default function Booking() {
                       })}
                     </div>
 
-                    {/* Already-booked ranges for this date - times only, no customer names (privacy) */}
+                    {/* Already-booked / blocked ranges for this date.
+                        Customer bookings: time only (no names - privacy).
+                        Admin blocks: time + reason (e.g. "Lunch break") since that's not private. */}
                     {busySlots.length > 0 && (
                       <div className="bg-black-card border border-black-border p-4">
                         <div className="text-[10px] tracking-[2px] uppercase text-cream/40 mb-2">
-                          Already Booked Today
+                          Unavailable Times
                         </div>
                         <div className="flex flex-wrap gap-2">
                           {busySlots
@@ -528,6 +537,11 @@ export default function Booking() {
                                 className="text-xs text-cream/50 bg-black border border-black-border px-2 py-1"
                               >
                                 {to12Hour(slot.start)} – {to12Hour(slot.end)}
+                                {/* Admin block reason shows here (e.g. "Lunch break").
+                                    Customer bookings never have booked_by set, so nothing extra shows for them. */}
+                                {slot.booked_by && (
+                                  <span className="text-gold/70 ml-1">· {slot.booked_by}</span>
+                                )}
                               </span>
                             ))}
                         </div>

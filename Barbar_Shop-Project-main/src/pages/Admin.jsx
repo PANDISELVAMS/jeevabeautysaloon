@@ -170,7 +170,12 @@ export default function Admin() {
   }
 
   // Today's date in YYYY-MM-DD for the leave-date input's min attribute
-  const todayStr = new Date().toISOString().slice(0, 10)
+  // (local Y/M/D, not toISOString - avoids the UTC one-day-shift bug for IST)
+  const getTodayStr = () => {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  }
+  const todayStr = getTodayStr()
 
   // ── Login screen ──────────────────────────────────────────────────────────
   if (!authed) {
