@@ -32,6 +32,9 @@ export default function Admin() {
   const [blockedDates, setBlockedDates]   = useState([])
   const [newLeaveDate, setNewLeaveDate]   = useState('')
   const [newLeaveReason, setNewLeaveReason] = useState('')
+  const [blockType, setBlockType]         = useState('full')   // 'full' or 'time'
+  const [newStartTime, setNewStartTime]   = useState('')
+  const [newEndTime, setNewEndTime]       = useState('')
   const [leaveSaving, setLeaveSaving]     = useState(false)
 
   // ── Fetch bookings from backend ──────────────────────────────────────────
@@ -108,22 +111,32 @@ export default function Admin() {
     }
   }
 
-  // ── Add a leave day (blocks that date on the customer booking page) ────────
+  // ── Add a leave day / time-block (blocks that date or time on booking page) ──
   const addLeaveDate = async (e) => {
     e.preventDefault()
     if (!newLeaveDate) return
+    if (blockType === 'time' && (!newStartTime || !newEndTime)) {
+      alert('Start time and end time rendayume kudukanum')
+      return
+    }
 
     setLeaveSaving(true)
     try {
       const res = await fetch(`${API_URL}/api/blocked-dates`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date: newLeaveDate, reason: newLeaveReason }),
+        body: JSON.stringify({
+          date: newLeaveDate,
+          reason: newLeaveReason,
+          ...(blockType === 'time' && { start_time: newStartTime, end_time: newEndTime }),
+        }),
       })
       if (!res.ok) throw new Error('Failed')
 
       setNewLeaveDate('')
       setNewLeaveReason('')
+      setNewStartTime('')
+      setNewEndTime('')
       fetchBlockedDates()
     } catch (err) {
       alert('Leave date add aagalai. Try again.')
@@ -254,10 +267,32 @@ export default function Admin() {
             <h2 className="font-playfair text-xl font-bold">Manage Leave Days</h2>
           </div>
           <p className="text-cream/40 text-xs mb-5">
-            Mark a date as unavailable — customers won't be able to book on that day. It will show faded/disabled on the booking page.
+            Block a whole day, or just a time range (e.g. lunch break). Blocked slots show faded/disabled on the booking page.
           </p>
 
-          {/* Add leave day form */}
+          {/* Full day vs specific time toggle */}
+          <div className="flex gap-2 mb-4">
+            <button
+              type="button"
+              onClick={() => setBlockType('full')}
+              className={`px-4 py-1.5 text-xs tracking-[1px] uppercase border transition-colors ${
+                blockType === 'full' ? 'bg-gold text-black border-gold' : 'border-black-border text-cream/50 hover:border-gold/40'
+              }`}
+            >
+              Full Day
+            </button>
+            <button
+              type="button"
+              onClick={() => setBlockType('time')}
+              className={`px-4 py-1.5 text-xs tracking-[1px] uppercase border transition-colors ${
+                blockType === 'time' ? 'bg-gold text-black border-gold' : 'border-black-border text-cream/50 hover:border-gold/40'
+              }`}
+            >
+              Specific Time
+            </button>
+          </div>
+
+          {/* Add leave day / time-block form */}
           <form onSubmit={addLeaveDate} className="flex flex-wrap gap-3 mb-6">
             <input
               type="date"
@@ -267,11 +302,32 @@ export default function Admin() {
               required
               className="bg-black border border-black-border text-cream px-3 py-2 text-sm focus:outline-none focus:border-gold"
             />
+
+            {blockType === 'time' && (
+              <>
+                <input
+                  type="time"
+                  value={newStartTime}
+                  onChange={e => setNewStartTime(e.target.value)}
+                  required
+                  className="bg-black border border-black-border text-cream px-3 py-2 text-sm focus:outline-none focus:border-gold"
+                />
+                <span className="text-cream/30 self-center text-xs">to</span>
+                <input
+                  type="time"
+                  value={newEndTime}
+                  onChange={e => setNewEndTime(e.target.value)}
+                  required
+                  className="bg-black border border-black-border text-cream px-3 py-2 text-sm focus:outline-none focus:border-gold"
+                />
+              </>
+            )}
+
             <input
               type="text"
               value={newLeaveReason}
               onChange={e => setNewLeaveReason(e.target.value)}
-              placeholder="Reason (optional) — e.g. Festival holiday"
+              placeholder={blockType === 'full' ? 'Reason (optional) — e.g. Festival holiday' : 'Reason (optional) — e.g. Lunch break'}
               className="flex-1 min-w-[180px] bg-black border border-black-border text-cream px-3 py-2 text-sm focus:outline-none focus:border-gold placeholder:text-cream/20"
             />
             <button
@@ -279,11 +335,11 @@ export default function Admin() {
               disabled={leaveSaving}
               className="bg-gold text-black px-5 py-2 text-xs tracking-[2px] uppercase font-semibold hover:bg-gold-light transition-colors inline-flex items-center gap-1 disabled:opacity-50"
             >
-              <Plus size={14} /> {leaveSaving ? 'Adding...' : 'Block Date'}
+              <Plus size={14} /> {leaveSaving ? 'Adding...' : 'Block'}
             </button>
           </form>
 
-          {/* List of blocked dates */}
+          {/* List of blocked dates / time-slots */}
           {blockedDates.length === 0 ? (
             <p className="text-cream/30 text-sm">No leave days set. All upcoming dates are bookable.</p>
           ) : (
@@ -294,13 +350,21 @@ export default function Admin() {
                   className="flex items-center justify-between gap-2 bg-black border border-black-border px-3 py-2"
                 >
                   <div>
-                    <div className="text-sm text-cream">{formatDate(d.date)}</div>
+                    <div className="text-sm text-cream">
+                      {formatDate(d.date)}
+                      {d.start_time && d.end_time && (
+                        <span className="text-gold ml-2 text-xs">{d.start_time} - {d.end_time}</span>
+                      )}
+                      {!d.start_time && (
+                        <span className="text-cream/30 ml-2 text-[10px] uppercase tracking-[1px]">Full Day</span>
+                      )}
+                    </div>
                     {d.reason && <div className="text-cream/40 text-xs">{d.reason}</div>}
                   </div>
                   <button
                     onClick={() => removeLeaveDate(d._id)}
                     className="text-cream/30 hover:text-red-400 transition-colors shrink-0"
-                    title="Unblock this date"
+                    title="Remove this block"
                   >
                     <Trash2 size={14} />
                   </button>

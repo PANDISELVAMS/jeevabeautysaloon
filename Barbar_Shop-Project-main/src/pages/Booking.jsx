@@ -7,7 +7,7 @@ import { useReveal } from '../hooks/useReveal'
 import { barbers } from '../data/barbers'
 import { services } from '../data/services'
 import { X, Check, ChevronRight, ShoppingBag } from 'lucide-react'
-import { addDays, addMonths, isSunday, isAfter, startOfToday } from 'date-fns'
+import { addDays, addMonths, isAfter, startOfToday } from 'date-fns'
 
 const API_URL = import.meta.env.VITE_API_URL // https://jeeva-salon.onrender.com
 
@@ -88,17 +88,22 @@ export default function Booking() {
   const [selectedTime, setSelectedTime]   = useState(null)
   const [form, setForm]                   = useState({ name: '', phone: '', email: '', notes: '' })
   const [confirmed, setConfirmed]         = useState(null)
-  const [busySlots, setBusySlots]         = useState([])   // blocked time ranges from backend
+  const [busySlots, setBusySlots]         = useState([])   // blocked time ranges from backend (customer bookings)
   const [submitting, setSubmitting]       = useState(false)
-  const [blockedDates, setBlockedDates]   = useState([])   // admin leave days - "YYYY-MM-DD" strings
+  const [fullyBlockedDates, setFullyBlockedDates] = useState([]) // "YYYY-MM-DD" - entire day off
+  const [adminBlockedEntries, setAdminBlockedEntries] = useState([]) // raw entries, includes partial time blocks
 
-  // Fetch admin-marked leave days once when this page loads
+  // Fetch admin-marked leave days / time blocks once when this page loads
   useEffect(() => {
     const fetchBlockedDates = async () => {
       try {
         const res = await fetch(`${API_URL}/api/blocked-dates`)
         const data = await res.json()
-        setBlockedDates(data.map(d => d.date)) // just the date strings
+        setAdminBlockedEntries(data)
+        // Full-day blocks = entries with no start_time/end_time set
+        setFullyBlockedDates(
+          data.filter(d => !d.start_time || !d.end_time).map(d => d.date)
+        )
       } catch (err) {
         console.error('Could not fetch blocked dates:', err)
       }
@@ -114,18 +119,25 @@ export default function Booking() {
 
   const handleFormChange = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }))
 
-  // ── When date is selected → fetch busy slots from backend ─────────────────
+  // ── When date is selected → fetch customer busy slots + merge admin time-blocks ──
   const handleDateChange = async (date) => {
     setSelectedDate(date)
     setSelectedTime(null)
+    const dateStr = toBackendDate(date)
+
+    // Admin partial blocks for THIS date (e.g. lunch break 13:00-14:00)
+    // Full-day blocks aren't relevant here - filterDate already prevents selecting them.
+    const adminPartialBlocks = adminBlockedEntries
+      .filter(d => d.date === dateStr && d.start_time && d.end_time)
+      .map(d => ({ start: d.start_time, end: d.end_time, booked_by: d.reason || 'Unavailable' }))
+
     try {
-      const dateStr = toBackendDate(date)
       const res = await fetch(`${API_URL}/api/busy?date=${dateStr}`)
       const data = await res.json()
-      setBusySlots(data.busy_slots || [])
+      setBusySlots([...(data.busy_slots || []), ...adminPartialBlocks])
     } catch (err) {
       console.error('Could not fetch busy slots:', err)
-      setBusySlots([])
+      setBusySlots(adminPartialBlocks) // still show admin blocks even if this fetch fails
     }
   }
 
@@ -236,13 +248,13 @@ export default function Booking() {
   // Customer can only book within the next 1 month
   const oneMonthFromNow = addMonths(startOfToday(), 1)
 
-  // Sundays closed + admin leave days excluded + must be today or later
+  // Must be today or later + not a date the admin has fully blocked
+  // (Sunday is NOT hardcoded anymore - admin decides via "Manage Leave Days")
   const filterDate = date => {
     const dateStr = toBackendDate(date)
     return (
-      isSunday(date) &&
       isAfter(date, addDays(startOfToday(), -1)) &&
-      !blockedDates.includes(dateStr) // admin marked this as unavailable
+      !fullyBlockedDates.includes(dateStr)
     )
   }
 
@@ -458,7 +470,7 @@ export default function Booking() {
                   inline
                 />
                 <p className="text-[11px] text-cream/30 mt-3">
-                  * Closed on Sundays · Bookings open up to 1 month ahead · Greyed dates are admin leave days
+                  * Bookings open up to 1 month ahead · Greyed dates are admin leave days
                 </p>
               </div>
               <div>
