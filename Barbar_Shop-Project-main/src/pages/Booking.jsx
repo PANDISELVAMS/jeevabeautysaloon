@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import DatePicker from 'react-datepicker'
 import toast from 'react-hot-toast'
@@ -7,7 +7,7 @@ import { useReveal } from '../hooks/useReveal'
 import { barbers } from '../data/barbers'
 import { services } from '../data/services'
 import { X, Check, ChevronRight, ShoppingBag } from 'lucide-react'
-import { addDays, isSunday, isAfter, startOfToday } from 'date-fns'
+import { addDays, addMonths, isSunday, isAfter, startOfToday } from 'date-fns'
 
 const API_URL = import.meta.env.VITE_API_URL // https://jeeva-salon.onrender.com
 
@@ -90,6 +90,21 @@ export default function Booking() {
   const [confirmed, setConfirmed]         = useState(null)
   const [busySlots, setBusySlots]         = useState([])   // blocked time ranges from backend
   const [submitting, setSubmitting]       = useState(false)
+  const [blockedDates, setBlockedDates]   = useState([])   // admin leave days - "YYYY-MM-DD" strings
+
+  // Fetch admin-marked leave days once when this page loads
+  useEffect(() => {
+    const fetchBlockedDates = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/blocked-dates`)
+        const data = await res.json()
+        setBlockedDates(data.map(d => d.date)) // just the date strings
+      } catch (err) {
+        console.error('Could not fetch blocked dates:', err)
+      }
+    }
+    fetchBlockedDates()
+  }, [])
 
   // Total duration of all selected services (e.g. Haircut 30min + Beard 20min = 50min)
   // This is THE key value used to correctly block/free time slots
@@ -218,7 +233,18 @@ export default function Booking() {
     }
   }
 
-  const filterDate = date => !isSunday(date) && isAfter(date, addDays(startOfToday(), -1))
+  // Customer can only book within the next 1 month
+  const oneMonthFromNow = addMonths(startOfToday(), 1)
+
+  // Sundays closed + admin leave days excluded + must be today or later
+  const filterDate = date => {
+    const dateStr = toBackendDate(date)
+    return (
+      !isSunday(date) &&
+      isAfter(date, addDays(startOfToday(), -1)) &&
+      !blockedDates.includes(dateStr) // admin marked this as unavailable
+    )
+  }
 
   // ── Confirmation screen ────────────────────────────────────────────────────
   if (confirmed) {
@@ -428,9 +454,12 @@ export default function Booking() {
                   onChange={handleDateChange}
                   filterDate={filterDate}
                   minDate={new Date()}
+                  maxDate={oneMonthFromNow}
                   inline
                 />
-                <p className="text-[11px] text-cream/30 mt-3">* Closed on Sundays</p>
+                <p className="text-[11px] text-cream/30 mt-3">
+                  * Closed on Sundays · Bookings open up to 1 month ahead · Greyed dates are admin leave days
+                </p>
               </div>
               <div>
                 <div className="text-[11px] tracking-[2px] uppercase text-cream/40 mb-3">

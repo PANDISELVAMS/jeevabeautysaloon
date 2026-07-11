@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { LogIn, LogOut, CheckCircle, Clock, XCircle, BarChart2, Users, Calendar, IndianRupee } from 'lucide-react'
+import { LogIn, LogOut, CheckCircle, Clock, XCircle, BarChart2, Users, Calendar, IndianRupee, CalendarX, Trash2, Plus } from 'lucide-react'
 
 const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || 'change_me_in_vercel'
 const API_URL = import.meta.env.VITE_API_URL // e.g. https://jeeva-salon.onrender.com
@@ -27,6 +27,12 @@ export default function Admin() {
   const [stats, setStats]       = useState(null)
   const [loading, setLoading]   = useState(false)
   const [error, setError]       = useState(null)
+
+  // ── Leave days state ────────────────────────────────────────────────────────
+  const [blockedDates, setBlockedDates]   = useState([])
+  const [newLeaveDate, setNewLeaveDate]   = useState('')
+  const [newLeaveReason, setNewLeaveReason] = useState('')
+  const [leaveSaving, setLeaveSaving]     = useState(false)
 
   // ── Fetch bookings from backend ──────────────────────────────────────────
   const fetchBookings = async (statusFilter = 'all') => {
@@ -57,11 +63,23 @@ export default function Admin() {
     }
   }
 
+  // ── Fetch blocked / leave dates ─────────────────────────────────────────────
+  const fetchBlockedDates = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/blocked-dates`)
+      const data = await res.json()
+      setBlockedDates(data)
+    } catch (err) {
+      console.error('Blocked dates fetch error:', err)
+    }
+  }
+
   // ── On login success → load data ──────────────────────────────────────────
   useEffect(() => {
     if (authed) {
       fetchBookings(filter)
       fetchStats()
+      fetchBlockedDates()
     }
   }, [authed])
 
@@ -81,14 +99,46 @@ export default function Admin() {
       })
       if (!res.ok) throw new Error('Status update failed')
 
-      // Local state update - no need to refetch all
       setBookings(prev =>
         prev.map(b => b._id === id ? { ...b, status: newStatus } : b)
       )
-      // Refresh stats
       fetchStats()
     } catch (err) {
       alert('Status update aagalai. Try again.')
+    }
+  }
+
+  // ── Add a leave day (blocks that date on the customer booking page) ────────
+  const addLeaveDate = async (e) => {
+    e.preventDefault()
+    if (!newLeaveDate) return
+
+    setLeaveSaving(true)
+    try {
+      const res = await fetch(`${API_URL}/api/blocked-dates`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date: newLeaveDate, reason: newLeaveReason }),
+      })
+      if (!res.ok) throw new Error('Failed')
+
+      setNewLeaveDate('')
+      setNewLeaveReason('')
+      fetchBlockedDates()
+    } catch (err) {
+      alert('Leave date add aagalai. Try again.')
+    } finally {
+      setLeaveSaving(false)
+    }
+  }
+
+  // ── Remove a leave day (customer can book that date again) ─────────────────
+  const removeLeaveDate = async (id) => {
+    try {
+      await fetch(`${API_URL}/api/blocked-dates/${id}`, { method: 'DELETE' })
+      setBlockedDates(prev => prev.filter(d => d._id !== id))
+    } catch (err) {
+      alert('Remove aagalai. Try again.')
     }
   }
 
@@ -105,6 +155,9 @@ export default function Admin() {
     const d = new Date(dateStr)
     return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
   }
+
+  // Today's date in YYYY-MM-DD for the leave-date input's min attribute
+  const todayStr = new Date().toISOString().slice(0, 10)
 
   // ── Login screen ──────────────────────────────────────────────────────────
   if (!authed) {
@@ -144,7 +197,6 @@ export default function Admin() {
 
   // ── Stats from backend dashboard API ─────────────────────────────────────
   const totalRevenue    = stats?.revenue?.total ?? 0
-  const confirmedCount  = stats?.bookings?.pending ?? 0   // pending = yet to be served
   const completedCount  = stats?.bookings?.completed ?? 0
   const todayRevenue    = stats?.revenue?.today ?? 0
   const todayCount      = stats?.today_bookings ?? 0
@@ -191,6 +243,71 @@ export default function Admin() {
         <div className="bg-black-card border border-gold/20 p-4 mb-8 flex items-center justify-between">
           <span className="text-[11px] tracking-[3px] uppercase text-cream/40">Today's Revenue</span>
           <span className="font-bebas text-3xl text-gold">₹{todayRevenue.toLocaleString('en-IN')}</span>
+        </div>
+
+        {/* ═══════════════════════════════════════════════════════════════════
+            LEAVE DAYS / BLOCKED DATES SECTION
+        ═══════════════════════════════════════════════════════════════════ */}
+        <div className="bg-black-card border border-black-border p-6 mb-8">
+          <div className="flex items-center gap-2 mb-1">
+            <CalendarX size={16} className="text-gold" />
+            <h2 className="font-playfair text-xl font-bold">Manage Leave Days</h2>
+          </div>
+          <p className="text-cream/40 text-xs mb-5">
+            Mark a date as unavailable — customers won't be able to book on that day. It will show faded/disabled on the booking page.
+          </p>
+
+          {/* Add leave day form */}
+          <form onSubmit={addLeaveDate} className="flex flex-wrap gap-3 mb-6">
+            <input
+              type="date"
+              value={newLeaveDate}
+              min={todayStr}
+              onChange={e => setNewLeaveDate(e.target.value)}
+              required
+              className="bg-black border border-black-border text-cream px-3 py-2 text-sm focus:outline-none focus:border-gold"
+            />
+            <input
+              type="text"
+              value={newLeaveReason}
+              onChange={e => setNewLeaveReason(e.target.value)}
+              placeholder="Reason (optional) — e.g. Festival holiday"
+              className="flex-1 min-w-[180px] bg-black border border-black-border text-cream px-3 py-2 text-sm focus:outline-none focus:border-gold placeholder:text-cream/20"
+            />
+            <button
+              type="submit"
+              disabled={leaveSaving}
+              className="bg-gold text-black px-5 py-2 text-xs tracking-[2px] uppercase font-semibold hover:bg-gold-light transition-colors inline-flex items-center gap-1 disabled:opacity-50"
+            >
+              <Plus size={14} /> {leaveSaving ? 'Adding...' : 'Block Date'}
+            </button>
+          </form>
+
+          {/* List of blocked dates */}
+          {blockedDates.length === 0 ? (
+            <p className="text-cream/30 text-sm">No leave days set. All upcoming dates are bookable.</p>
+          ) : (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+              {blockedDates.map(d => (
+                <div
+                  key={d._id}
+                  className="flex items-center justify-between gap-2 bg-black border border-black-border px-3 py-2"
+                >
+                  <div>
+                    <div className="text-sm text-cream">{formatDate(d.date)}</div>
+                    {d.reason && <div className="text-cream/40 text-xs">{d.reason}</div>}
+                  </div>
+                  <button
+                    onClick={() => removeLeaveDate(d._id)}
+                    className="text-cream/30 hover:text-red-400 transition-colors shrink-0"
+                    title="Unblock this date"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Filter tabs */}
@@ -246,12 +363,10 @@ export default function Admin() {
                 {bookings.map(b => (
                   <tr key={b._id} className="hover:bg-black/20 transition-colors">
 
-                    {/* ID */}
                     <td className="text-gold font-bebas text-base">
                       #{b._id.toString().slice(-6)}
                     </td>
 
-                    {/* Customer */}
                     <td>
                       <div className="font-medium text-sm">{b.customer_name}</div>
                       <div className="text-cream/40 text-xs">{b.customer_phone}</div>
@@ -260,7 +375,6 @@ export default function Admin() {
                       )}
                     </td>
 
-                    {/* Package */}
                     <td>
                       <span className="text-[10px] bg-black border border-black-border px-2 py-0.5 text-cream/60 whitespace-nowrap">
                         {b.package?.name ?? 'N/A'}
@@ -270,29 +384,24 @@ export default function Admin() {
                       )}
                     </td>
 
-                    {/* Date */}
                     <td className="text-sm text-cream/70 whitespace-nowrap">
                       {formatDate(b.booking_date)}
                     </td>
 
-                    {/* Time */}
                     <td className="text-gold font-bebas text-base whitespace-nowrap">
                       {b.start_time} – {b.end_time}
                     </td>
 
-                    {/* Amount */}
                     <td className="font-bebas text-xl text-gold whitespace-nowrap">
                       ₹{b.amount?.toLocaleString('en-IN')}
                     </td>
 
-                    {/* Status badge */}
                     <td>
                       <span className={`inline-flex items-center gap-1 text-[10px] tracking-[1px] uppercase px-2 py-1 border ${STATUS_STYLES[b.status] ?? STATUS_STYLES.pending}`}>
                         {STATUS_ICON[b.status]} {b.status}
                       </span>
                     </td>
 
-                    {/* Status dropdown */}
                     <td>
                       <select
                         value={b.status}

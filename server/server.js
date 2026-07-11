@@ -4,11 +4,12 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const cron = require("node-cron");
 
-const packageRoutes   = require("./routes/packages");
-const bookingRoutes   = require("./routes/bookings");
-const dashboardRoutes = require("./routes/dashboard");
-const telegramWebhook = require("./routes/telegramWebhook");
-const Booking         = require("./models/Booking");
+const packageRoutes     = require("./routes/packages");
+const bookingRoutes     = require("./routes/bookings");
+const dashboardRoutes   = require("./routes/dashboard");
+const telegramWebhook   = require("./routes/telegramWebhook");
+const blockedDateRoutes = require("./routes/blockedDates");
+const Booking           = require("./models/Booking");
 
 const app  = express();
 const PORT = process.env.PORT || 5000;
@@ -16,7 +17,7 @@ const PORT = process.env.PORT || 5000;
 // ── CORS ──────────────────────────────────────────────────────────────────────
 // CORS_ORIGIN env variable la unoda Vercel URL pottu
 // Example: CORS_ORIGIN=https://jeeva-salon.vercel.app
-const allowedOrigins = (process.env.CORS_ORIGIN || "https://jeevabeautysaloon.vercel.app")
+const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:3000,http://localhost:5173")
   .split(",")
   .map((o) => o.trim());
 
@@ -46,14 +47,15 @@ mongoose
 // ── Routes ────────────────────────────────────────────────────────────────────
 app.use("/api/packages", packageRoutes);
 app.use("/api/bookings", bookingRoutes);
-app.use("/api",          dashboardRoutes); // /api/dashboard + /api/busy
-app.use("/api/telegram", telegramWebhook); // /api/telegram/webhook
+app.use("/api",              dashboardRoutes);   // /api/dashboard + /api/busy
+app.use("/api/telegram",     telegramWebhook);   // /api/telegram/webhook
+app.use("/api/blocked-dates", blockedDateRoutes); // admin leave days
 
 // Health check
 app.get("/", (req, res) => res.json({ status: "Jeeva Salon API running ✅" }));
 
 // ── Auto-delete: 7 days pana bookings delete ──────────────────────────────────
-// Every Sunday 12:30 AM IST = Sunday 7:00 PM UTC
+// Every Sunday 11:00 PM IST
 // Cron format: minute hour day month weekday
 cron.schedule("0 23 * * 0", async () => {
   try {
