@@ -51,28 +51,54 @@ export default function Services() {
         </div>
       </div>
 
-      {/* Cart sticky bar */}
+      {/* ═══════════════════════════════════════════════════════════════════
+          CART STICKY BAR - fixed height, chips scroll horizontally instead
+          of wrapping and growing the box taller. This is what fixes the
+          "box gets huge on mobile" bug.
+      ═══════════════════════════════════════════════════════════════════ */}
       {cart.length > 0 && (
         <div className="fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 z-40 w-full max-w-2xl px-4">
-          <div className="bg-black-soft border border-gold/40 shadow-2xl shadow-black p-4 flex items-center gap-4 flex-wrap">
-            <div className="flex items-center gap-2 text-gold">
-              <ShoppingBag size={16} />
-              <span className="font-bebas text-xl">{cart.length} service{cart.length > 1 ? 's' : ''}</span>
+          <div className="bg-black-soft border border-gold/40 shadow-2xl shadow-black px-4 py-3">
+
+            {/* Top row: count + total + book button - ALWAYS visible, never pushed down */}
+            <div className="flex items-center justify-between gap-3 mb-2">
+              <div className="flex items-center gap-2 text-gold shrink-0">
+                <ShoppingBag size={16} />
+                <span className="font-bebas text-xl leading-none">
+                  {cart.length} service{cart.length > 1 ? 's' : ''}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-3 shrink-0">
+                <span className="font-bebas text-2xl text-gold leading-none">₹{cartTotal}</span>
+                <Link
+                  to="/booking"
+                  className="bg-gold text-black px-5 py-2 text-xs tracking-[2px] uppercase font-semibold hover:bg-gold-light transition-colors inline-flex items-center gap-1 whitespace-nowrap"
+                >
+                  Book <ArrowRight size={12} />
+                </Link>
+              </div>
             </div>
-            <div className="flex flex-wrap gap-2 flex-1 min-w-0">
+
+            {/* Bottom row: chips - horizontal scroll, fixed single-line height,
+                never wraps into multiple rows that would grow the box */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide">
               {cart.map(s => (
-                <span key={s.id} className="inline-flex items-center gap-1 bg-black-card border border-black-border text-xs px-2 py-1 text-cream/70">
+                <span
+                  key={s.id}
+                  className="inline-flex items-center gap-1 bg-black-card border border-black-border text-xs px-2 py-1 text-cream/70 whitespace-nowrap shrink-0"
+                >
                   {s.name}
-                  <button onClick={() => removeFromCart(s.id)} className="text-cream/30 hover:text-gold ml-1"><X size={10} /></button>
+                  <button
+                    onClick={() => removeFromCart(s.id)}
+                    className="text-cream/30 hover:text-gold ml-1 shrink-0"
+                  >
+                    <X size={10} />
+                  </button>
                 </span>
               ))}
             </div>
-            <div className="flex items-center gap-4 shrink-0">
-              <span className="font-bebas text-2xl text-gold">₹{cartTotal}</span>
-              <Link to="/booking" className="bg-gold text-black px-5 py-2 text-xs tracking-[2px] uppercase font-semibold hover:bg-gold-light transition-colors inline-flex items-center gap-1">
-                Book <ArrowRight size={12} />
-              </Link>
-            </div>
+
           </div>
         </div>
       )}
