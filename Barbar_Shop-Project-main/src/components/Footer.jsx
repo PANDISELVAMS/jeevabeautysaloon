@@ -53,7 +53,7 @@ export default function Footer() {
               </li>
               <li className="flex gap-3 text-sm text-cream/50">
                 <Phone size={14} className="text-gold mt-0.5 shrink-0" />
-                <span>+91 7904616471</span>
+                <span>+91 9487787764</span>
               </li>
               <li className="flex gap-3 text-sm text-cream/50">
                 <Clock size={14} className="text-gold mt-0.5 shrink-0" />
